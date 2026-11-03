@@ -27,9 +27,21 @@ The first search reads live employer pages and can take one or two minutes. A sl
 - Includes all student disciplines at this mining employer; use discipline filters to focus on technical roles.
 - Canada is the default region; other regions are available when present in the feed.
 - Shows source status, partial failures, and clearly labelled older cached results during outages.
-- Saves applications and notes in this browser; export the tracker to CSV for backup.
-- Skill matching is literal keyword matching, not AI ranking or a guarantee of eligibility.
+- Autosaves applications, notes, eligibility checks, preparation tasks, follow-up dates and your profile to a local file. Export CSV for a spreadsheet or JSON for a restorable backup.
+- Skill assessments show coverage of a fixed dictionary of skill keywords, matching/missing terms, and your self-reported eligibility checks. They do not estimate hiring probabilities.
 - Links to Agnico Eagle's student portal as a separate directory entry.
+
+## Dashboard, progress and job fit
+
+The app opens on a graphical dashboard showing saved roles, applications, interviews, offers and next steps. In **My applications**, change stages, write notes, add a follow-up date, or add an external job link and its posting text. Open **Details** to check degree/enrolment, authorization, term and location requirements, and tick off preparation tasks. Follow-up dates are tracker notes, not automatic notifications.
+
+Your edits autosave. Wait for **Saved to this computer** before closing. If disk saving fails, keep the tab open and download a backup. Conflicting edits from another tab are rejected rather than silently overwritten. Existing version 1 browser data migrates when the disk profile is empty. The profile is capped at 200 saved applications.
+
+**Download backup** exports all progress as JSON. **Restore backup** validates and merges a version 2 backup: new applications and skills are added, existing application records are kept, and only empty profile fields are filled. CSV export is for viewing, not restoration. To move to another computer, restore the JSON backup there.
+
+**When updating:** preserve the `data` folder, or download a JSON backup before replacing your app folder. You can choose another data directory with the `ORE_DATA_DIR` environment variable.
+
+**About chances:** actual hiring probability is unknown. The displayed percentage is `matched recognized skill keywords / recognized skill keywords in the posting`, not chance of an offer. A fixed dictionary detects mentions, including optional skills, and can miss synonyms. The program cannot measure applicant competition, resume quality, interview performance or employer preferences. A “no” on any self-reported eligibility check flags the job regardless of keyword coverage. Degree and available-term profile fields are notes for those manual checks, not automatic qualification decisions.
 
 ## Optional broader search: Adzuna
 
@@ -41,7 +53,7 @@ The adapter searches Canada's Adzuna endpoint for five mining/geology/geotechnic
 
 This is a personal local application, not a complete index of every internship. Teck scans are capped at 60 student pages, with four concurrent requests. Page layouts and API availability can change. Unavailable fields say “See posting” or “Not specified”; deadlines are not inferred from posting dates. Read the employer's full page before applying.
 
-The app only reads public postings. It does not submit applications, send emails, upload resumes, or sign into employer accounts. Skills, notes, and saved application statuses stay in localStorage for the current browser/origin. They do not synchronize across devices. Clearing browser storage deletes them. CSV export contains notes and URLs; store it privately.
+The app only reads public postings. It does not submit applications, send emails, upload resumes, or sign into employer accounts. Skills, notes, and saved application statuses are stored in `data/progress.json` on the computer running the app, with a browser recovery cache. Clearing browser storage does not erase successfully saved disk progress. They do not synchronize across devices. JSON and CSV exports contain your notes and URLs; store them privately. The data folder is excluded from Git, and static routes cannot serve it. This is a single-user app: anyone who can access your local server may access that profile.
 
 The server binds to `127.0.0.1` by default. Do not expose it publicly without adding authentication, request limits, and durable shared caching. No scheduled searches run automatically. The app has no analytics or remote fonts.
 
@@ -51,10 +63,12 @@ Zinterno supplies the product blueprint: internship cards and detail views, comp
 
 ## Development
 
-- `public/index.html`, `public/style.css`, `public/app.js`: responsive UI and browser-local tracker.
+- `public/index.html`, `public/style.css`, `public/app.js`: responsive dashboard, application tracker, and fit details.
 - `backend/jobs.js`: employer discovery, parser, optional Adzuna adapter, cache and filters.
-- `backend/server.js`: local HTTP server and read-only API.
-- `test/jobs.test.js`: parser, provider filtering, caching, failure handling, and HTTP tests.
+- `backend/server.js`: local HTTP server, job search and progress APIs.
+- `public/progress.js`: backup validation, merges, and transparent skill assessments.
+- `backend/progress-store.js`: serialized atomic disk writes and revision conflict detection.
+- `test/*.test.js`: job parsing, filtering, caching, persistence, backup validation, fit scoring, and HTTP tests.
 
 ```sh
 npm test
