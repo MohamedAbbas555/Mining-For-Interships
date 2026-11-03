@@ -12,11 +12,12 @@ A Canada-first mining internship finder inspired by the uploaded **Zinterno** pr
 3. Open a terminal in the extracted folder and run:
 
    ```sh
+   npm ci
    npm start
    ```
 4. Open **http://localhost:3000**. Keep the terminal open while using it.
 
-There are **no packages to install**, no database, and no account signup. On Windows, you can double-click `START-WINDOWS.bat` after installing Node.js.
+`npm ci` installs the PDF and DOCX readers. There is no database or account signup for local drafting. On Windows, you can double-click `START-WINDOWS.bat` after installing Node.js.
 
 The first search reads live employer pages and can take one or two minutes. A slow provider can take longer. Results are cached in memory for 15 minutes; Refresh reads the cache until it expires. Restarting the process clears the cache. No refresh runs while the program is closed.
 
@@ -43,6 +44,28 @@ Your edits autosave. Wait for **Saved to this computer** before closing. If disk
 
 **About chances:** actual hiring probability is unknown. The displayed percentage is `matched recognized skill keywords / recognized skill keywords in the posting`, not chance of an offer. A fixed dictionary detects mentions, including optional skills, and can miss synonyms. The program cannot measure applicant competition, resume quality, interview performance or employer preferences. A “no” on any self-reported eligibility check flags the job regardless of keyword coverage. Degree and available-term profile fields are notes for those manual checks, not automatic qualification decisions.
 
+## Resume and cover letters
+
+1. Open **Resume & apply**, add your name, and upload a PDF, DOCX or TXT resume (maximum 2 MB, PDF up to 30 pages). Scanned PDFs need selectable text or a pasted text version.
+2. Review extracted text and select **Save resume text** after corrections. The original document remains unchanged; upload a corrected document if needed.
+3. Choose a discipline, country and optional location; select **Queue matching jobs**. This uses the discovered student roles, excludes senior titles, and skips previously saved IDs and duplicate URLs.
+4. Select **Draft queued letters**, or **Prepare application** on a listing. Local drafting uses relevant resume passages; edit and review the result. A batch prepares at most 20 new letters and preserves existing letters.
+5. Download the letter and open the employer portal. Complete its form and attach your resume. Update the status to Applied only after the employer confirms receipt.
+
+Letters and queue settings autosave with your progress. Changing resume or job text invalidates a draft's review; changing your signature name also requires regenerating letters. JSON backups contain resume text and cover letters, but not the original uploaded document. Keep the `data/resumes` folder when updating, or upload the original again.
+
+The optional **auto-prepare** switch searches every 15 minutes while this browser tab and server remain open, queues matching new jobs, and creates local drafts. It never submits applications. Background-tab throttling can delay a refresh. Existing letters, including stale ones, are preserved until you explicitly regenerate them.
+
+### Optional AI drafting
+
+Copy `.env.example` to `.env`. Set `OPENAI_API_KEY` and `OPENAI_MODEL` to a Responses API model available to your API account, then restart the server. Select AI drafting and the data-sharing checkbox. Requests send resume text, your signature name and job text to OpenAI, with `store: false`; API usage may be billed. ChatGPT's Gmail connection does not provide an API key to this local program. The API key stays on the server. Treat every generated letter as a draft and check its claims.
+
+### Gmail and LinkedIn
+
+Gmail connected in ChatGPT is separate from this local app. This version has no Gmail OAuth integration or employer-form submission adapter. No email-triggered auto-apply task is enabled. Paste alert text to extract direct LinkedIn job links, then add the full job description using **Add a job**. LinkedIn tracking links may need opening in Gmail first.
+
+**Download ChatGPT handoff** exports resume text, selection criteria and queued applications for use in a ChatGPT session. It contains private information; upload it only where intended. Actual automated submission needs accessible mailbox tools, your resume and criteria, and a supported employer application flow with required answers. This app does not claim successful submission from a prepared draft or an opened link.
+
 ## Optional broader search: Adzuna
 
 Get credentials at https://developer.adzuna.com/. Copy `.env.example` to `.env`, fill in `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`, then restart. Credentials remain on the server. Do not commit `.env`.
@@ -53,13 +76,13 @@ The adapter searches Canada's Adzuna endpoint for five mining/geology/geotechnic
 
 This is a personal local application, not a complete index of every internship. Teck scans are capped at 60 student pages, with four concurrent requests. Page layouts and API availability can change. Unavailable fields say “See posting” or “Not specified”; deadlines are not inferred from posting dates. Read the employer's full page before applying.
 
-The app only reads public postings. It does not submit applications, send emails, upload resumes, or sign into employer accounts. Skills, notes, and saved application statuses are stored in `data/progress.json` on the computer running the app, with a browser recovery cache. Clearing browser storage does not erase successfully saved disk progress. They do not synchronize across devices. JSON and CSV exports contain your notes and URLs; store them privately. The data folder is excluded from Git, and static routes cannot serve it. This is a single-user app: anyone who can access your local server may access that profile.
+The app reads public postings and accepts resume uploads to your local computer. It does not submit applications, send emails, or sign into employer accounts. Optional AI drafting sends resume text and the job description to OpenAI only when selected. Skills, notes, and saved application statuses are stored in `data/progress.json` on the computer running the app, with a browser recovery cache. Clearing browser storage does not erase successfully saved disk progress. They do not synchronize across devices. JSON and CSV exports contain your notes and URLs; store them privately. The data folder is excluded from Git, and static routes cannot serve it. This is a single-user app: anyone who can access your local server may access that profile.
 
-The server binds to `127.0.0.1` by default. Do not expose it publicly without adding authentication, request limits, and durable shared caching. No scheduled searches run automatically. The app has no analytics or remote fonts.
+The server binds to `127.0.0.1` by default. Do not expose it publicly without adding authentication, request limits, and durable shared caching. Optional auto-preparation refreshes every 15 minutes while the app is open; nothing runs after you close it. The app has no analytics or remote fonts.
 
 ## Blueprint mapping
 
-Zinterno supplies the product blueprint: internship cards and detail views, company/skill filters, profile matching, and application links. ORE is a focused implementation of those patterns, with automatic discovery in place of manually populated MongoDB listings. The original login, admin, resume-upload and MongoDB components are not required for this single-user version. The upload also contained case-sensitive import mismatches; this implementation uses consistent module paths and starts on Linux, Windows, and macOS.
+Zinterno supplies the product blueprint: internship cards and detail views, company/skill filters, profile matching, and application links. ORE is a focused implementation of those patterns, with automatic discovery in place of manually populated MongoDB listings. The original login, admin and MongoDB components are not required for this single-user version. The upload also contained case-sensitive import mismatches; this implementation uses consistent module paths and starts on Linux, Windows, and macOS.
 
 ## Development
 
@@ -68,7 +91,9 @@ Zinterno supplies the product blueprint: internship cards and detail views, comp
 - `backend/server.js`: local HTTP server, job search and progress APIs.
 - `public/progress.js`: backup validation, merges, and transparent skill assessments.
 - `backend/progress-store.js`: serialized atomic disk writes and revision conflict detection.
-- `test/*.test.js`: job parsing, filtering, caching, persistence, backup validation, fit scoring, and HTTP tests.
+- `test/*.test.js`: 50 automated tests covering job parsing, persistence, PDF/DOCX/TXT extraction, cover-letter generation, queue filters, duplicate prevention, stale drafts, backup validation and HTTP boundaries.
+- `backend/resume.js`, `backend/resume-worker.js`: bounded document extraction.
+- `backend/letters.js`, `public/workflow.js`: cover letters and application preparation.
 
 ```sh
 npm test
@@ -83,3 +108,5 @@ Use `country=all` for all available regions. `GET /api/health` checks the local 
 - https://jobs.teck.com/careers/ — employer application portal
 - https://developer.adzuna.com/overview — optional search API
 - https://agnicoeagle.com/English/careers/student-experiences/default.aspx — student directory link
+
+The 50 tests use real generated PDF/DOCX fixtures and mocked AI responses. They do not validate live AI output quality, Gmail delivery or employer submission, and they never send applications.

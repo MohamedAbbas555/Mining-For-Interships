@@ -6,6 +6,12 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
+call npm ci
+if errorlevel 1 (
+  echo Package installation failed. Check your internet connection and try again.
+  pause
+  exit /b 1
+)
 start "" http://localhost:3000
 call npm start
 pause

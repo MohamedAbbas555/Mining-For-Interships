@@ -1,6 +1,6 @@
 {
   "name": "mining-internship-finder",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Canada-first mining internship finder inspired by Zinterno",
   "type": "module",
@@ -9,7 +9,11 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env backend/server.js",
-    "test": "node --test",
+    "test": "node --test test/jobs.test.js test/progress.test.js test/resume-workflow.test.js",
     "dev": "node backend/server.js"
+  },
+  "dependencies": {
+    "mammoth": "1.13.0",
+    "pdf-parse": "2.4.5"
   }
 }

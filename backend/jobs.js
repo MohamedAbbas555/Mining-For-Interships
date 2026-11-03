@@ -7,6 +7,7 @@ export function plain(s = '') {
 }
 export function safeURL(value) { try { const u = new URL(value); return ['https:', 'http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } }
 export function discipline(s) {
+  if (/petroleum|reservoir|oil.and.gas/i.test(s)) return 'Petroleum';
   if (/geolog|geochem|geophys|exploration/i.test(s)) return 'Geology';
   if (/geotech|tailings|rock mechanics/i.test(s)) return 'Geotechnical';
   if (/process|metallurg|mineral/i.test(s)) return 'Processing';

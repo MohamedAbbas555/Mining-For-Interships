@@ -1,3 +1,4 @@
+import {DISCIPLINES} from './workflow.js';
 export const STAGES = ['Saved','Preparing','Applied','Interview','Offer','Closed'];
 export const CHECKS = {enrollment:'Degree and enrolment requirements',authorization:'Work authorization requirements',term:'Start date and term length',location:'Location and travel requirements'};
 export const TASKS = {resume:'Tailored resume',evidence:'Relevant project or experience examples',review:'Application reviewed'};
@@ -18,9 +19,9 @@ export function normalizeState(value) {
     const eligibility = {}, tasks = {};
     for (const key of Object.keys(CHECKS)) eligibility[key] = ['yes','no','unknown'].includes(entry.eligibility?.[key]) ? entry.eligibility[key] : 'unknown';
     for (const key of Object.keys(TASKS)) tasks[key] = entry.tasks?.[key] === true;
-    saved[id] = {job, status: STAGES.includes(entry.status) ? entry.status : 'Saved', notes:string(entry.notes), savedAt:string(entry.savedAt,40), followUp:/^\d{4}-\d{2}-\d{2}$/.test(entry.followUp || '') ? entry.followUp : '', eligibility,tasks};
+    saved[id] = {job, status: STAGES.includes(entry.status) ? entry.status : 'Saved', notes:string(entry.notes), savedAt:string(entry.savedAt,40), followUp:/^\d{4}-\d{2}-\d{2}$/.test(entry.followUp || '') ? entry.followUp : '', eligibility,tasks,queued:entry.queued===true,submissionEvidence:string(entry.submissionEvidence,1000),letter:{text:string(entry.letter?.text,12000),signature:string(entry.letter?.signature,100),method:['local','ai','edited'].includes(entry.letter?.method)?entry.letter.method:'local',generatedAt:string(entry.letter?.generatedAt,40),reviewed:entry.letter?.reviewed===true,evidence:Array.isArray(entry.letter?.evidence)?entry.letter.evidence.filter(x=>typeof x==='string').slice(0,3).map(x=>x.slice(0,400)):[]}};
   }
-  return {schema:2,saved,skills:[...new Set(value.skills.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,80)).filter(Boolean))].slice(0,40),profile:{program:string(value.profile.program,150),term:string(value.profile.term,100)}};
+  return {schema:2,saved,skills:[...new Set(value.skills.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,80)).filter(Boolean))].slice(0,40),profile:{program:string(value.profile.program,150),term:string(value.profile.term,100),name:string(value.profile.name,150)},resume:{name:string(value.resume?.name,150),text:string(value.resume?.text,50000),hash:string(value.resume?.hash,64),fileId:/^[a-f0-9]{64}$/.test(value.resume?.fileId||'')?value.resume.fileId:'',fileType:['pdf','docx','txt'].includes(value.resume?.fileType)?value.resume.fileType:'',updatedAt:string(value.resume?.updatedAt,40)},workflow:{discipline:DISCIPLINES.includes(value.workflow?.discipline)?value.workflow.discipline:'Mining',country:['ca','us','all'].includes(value.workflow?.country)?value.workflow.country:'ca',location:string(value.workflow?.location,200),autoPrepare:value.workflow?.autoPrepare===true}};
 }
 export function emptyState(){return {schema:2,saved:{},skills:[],profile:{program:'',term:''}};}
 const SKILLS = {
@@ -48,5 +49,5 @@ export function assess(job, skills, entry) {
 }
 export function mergeBackup(current, incoming) {
   const a=normalizeState(current),b=normalizeState(incoming);
-  return normalizeState({schema:2,saved:{...b.saved,...a.saved},skills:[...a.skills,...b.skills],profile:{program:a.profile.program||b.profile.program,term:a.profile.term||b.profile.term}});
+  return normalizeState({schema:2,resume:a.resume.text?a.resume:b.resume,workflow:a.workflow,saved:{...b.saved,...a.saved},skills:[...a.skills,...b.skills],profile:{name:a.profile.name||b.profile.name,program:a.profile.program||b.profile.program,term:a.profile.term||b.profile.term}});
 }
